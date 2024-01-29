@@ -674,6 +674,7 @@ class ActiveRecordTest < Minitest::Spec
   it 'supports boolean column as enumerized field' do
     User.delete_all
 
+
     User.create!(newsletter_subscribed: :subscribed)
     expect(User.find_by(newsletter_subscribed: :subscribed).newsletter_subscribed).must_equal 'subscribed'
 
