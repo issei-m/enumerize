@@ -674,11 +674,11 @@ class ActiveRecordTest < Minitest::Spec
   it 'supports boolean column as enumerized field' do
     User.delete_all
 
-    User.create!(newsletter_subscribed: true)
-    expect(User.find_by(newsletter_subscribed: true).newsletter_subscribed).must_equal 'subscribed'
+    User.create!(newsletter_subscribed: :subscribed)
+    expect(User.find_by(newsletter_subscribed: :subscribed).newsletter_subscribed).must_equal 'subscribed'
 
-    User.create!(newsletter_subscribed: false)
-    expect(User.find_by(newsletter_subscribed: false).newsletter_subscribed).must_equal 'unsubscribed'
+    User.create!(newsletter_subscribed: :unsubscribed)
+    expect(User.find_by(newsletter_subscribed: :unsubscribed).newsletter_subscribed).must_equal 'unsubscribed'
   end
 
   it 'has same value with original object when created by #dup' do
