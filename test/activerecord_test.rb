@@ -3,7 +3,6 @@
 require 'test_helper'
 require 'active_record'
 require 'logger'
-
 db = (ENV['DB'] || 'sqlite3').to_sym
 
 silence_warnings do
@@ -75,6 +74,7 @@ ActiveRecord::Base.connection.instance_eval do
     t.string :account_type, :default => :basic
     t.string :foo
     t.boolean :newsletter_subscribed, default: true
+    t.json :store_accessor_store_with_no_defaults
   end
 
   create_table :documents do |t|
@@ -123,6 +123,9 @@ class User < ActiveRecord::Base
   enumerize :account_type, :in => [:basic, :premium]
   enumerize :newsletter_subscribed, in: { subscribed: true, unsubscribed: false }
 
+  store_accessor :store_accessor_store_with_no_defaults, [:origin]
+  enumerize :origin, in: [:browser, :app]
+
   # There is no column for relationship enumeration for testing purposes: model
   # should not be broken even if the associated column does not exist yet.
   enumerize :relationship, :in => [:single, :married]
@@ -144,7 +147,7 @@ class SkipValidationsUser < ActiveRecord::Base
   include SkipValidationsEnum
 end
 
-class  DoNotSkipValidationsUser < ActiveRecord::Base
+class DoNotSkipValidationsUser < ActiveRecord::Base
   self.table_name = "users"
   include DoNotSkipValidationsEnum
 end
@@ -159,7 +162,7 @@ class SkipValidationsLambdaWithParamUser < ActiveRecord::Base
   include SkipValidationsLambdaWithParamEnum
 end
 
-class ActiveRecordTest < MiniTest::Spec
+class ActiveRecordTest < Minitest::Spec
   it 'sets nil if invalid value is passed' do
     user = User.new
     user.sex = :invalid
@@ -197,6 +200,15 @@ class ActiveRecordTest < MiniTest::Spec
     user.save!
     user.reload
     expect(user.language).must_equal 'en'
+  end
+
+  it 'returns nil if store column is nil, uses .store_accessor, and has no default values for store\'s attributes' do
+    User.delete_all
+    user = User.create!
+    user.update_column(:store_accessor_store_with_no_defaults, nil)
+    user.reload
+    expect(user.store_accessor_store_with_no_defaults).must_be_nil
+    expect(user.origin).must_be_nil
   end
 
   it 'has default value' do
@@ -663,12 +675,23 @@ class ActiveRecordTest < MiniTest::Spec
     User.delete_all
 
     User.create!(newsletter_subscribed: true)
-    expect(User.exists?(newsletter_subscribed: true)).must_equal true
+    expect(User.find_by(newsletter_subscribed: true).newsletter_subscribed).must_equal 'subscribed'
 
     User.create!(newsletter_subscribed: false)
-    expect(User.exists?(newsletter_subscribed: false)).must_equal true
+    expect(User.find_by(newsletter_subscribed: false).newsletter_subscribed).must_equal 'unsubscribed'
   end
 
+  it 'has same value with original object when created by #dup' do
+    user1 = User.new(skill: :casual)
+    user2 = user1.dup
+    expect(user2.skill).must_equal 'casual'
+  end
+
+  it 'has same value with original object when created by #clone' do
+    user1 = User.new(skill: :casual)
+    user2 = user1.clone
+    expect(user2.skill).must_equal 'casual'
+  end
 
   if Rails::VERSION::MAJOR >= 6
     it 'supports AR#insert_all' do

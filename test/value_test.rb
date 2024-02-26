@@ -3,7 +3,7 @@
 require 'test_helper'
 require 'yaml'
 
-class ValueTest < MiniTest::Spec
+class ValueTest < Minitest::Spec
   class Model
   end
 
@@ -160,6 +160,13 @@ class ValueTest < MiniTest::Spec
   describe 'initialize' do
     it 'no output if undefined boolean method' do
       assert_silent() { Enumerize::Value.new(attr, 'test_value') }
+    end
+  end
+
+  describe '#as_json' do
+    it 'returns String object, not Value object' do
+      expect(val.as_json.class).must_equal String
+      expect(val.as_json).must_equal 'test_value'
     end
   end
 end

@@ -21,7 +21,13 @@ module Enumerize
           require 'enumerize/hooks/uniqueness'
 
           unless options[:multiple]
-            if ::ActiveRecord.version >= ::Gem::Version.new("7.0.0.alpha")
+            if ::ActiveRecord.version >= ::Gem::Version.new("7.2.0.alpha")
+              attribute(name)
+
+              decorate_attributes([name]) do |_, subtype|
+                Type.new(enumerized_attributes[name], subtype)
+              end
+            elsif ::ActiveRecord.version >= ::Gem::Version.new("7.0.0.alpha")
               attribute(name) do |subtype|
                 Type.new(enumerized_attributes[name], subtype)
               end
@@ -74,7 +80,9 @@ module Enumerize
             end
 
             if store_attr.present?
-              reloaded.send("#{attr.name}=", reloaded.send(store_attr).with_indifferent_access[attr.name])
+              unless reloaded.send(store_attr).nil?
+                reloaded.send("#{attr.name}=", reloaded.send(store_attr).with_indifferent_access[attr.name])
+              end
             else
               reloaded.send("#{attr.name}=", reloaded[attr.name])
             end
@@ -110,16 +118,18 @@ module Enumerize
 
       def serialize(value)
         v = @attr.find_value(value)
-        (v && v.value) || value
-      end
+        return value unless v
 
-      alias type_cast_for_database serialize
+        v.value
+      end
 
       def cast(value)
-        @attr.find_value(value)
+        if value.is_a?(::Enumerize::Value)
+          value
+        else
+          @attr.find_value(@subtype.cast(value))
+        end
       end
-
-      alias type_cast_from_database cast
 
       def as_json(options = nil)
         {attr: @attr.name}.as_json(options)

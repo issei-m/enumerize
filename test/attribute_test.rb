@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class AttributeTest < MiniTest::Spec
+class AttributeTest < Minitest::Spec
   def attr
     @attr ||= nil
   end
@@ -36,6 +36,13 @@ class AttributeTest < MiniTest::Spec
     it 'returns scopes from options' do
       build_attr nil, 'foo', :in => %w[a b], :i18n_scope => %w[bar buzz]
       expect(attr.i18n_scopes).must_equal %w[bar buzz]
+    end
+  end
+
+  describe 'arguments' do
+    it 'returns arguments' do
+      build_attr nil, :foo, :in => [:a, :b], :scope => true
+      expect(attr.arguments).must_equal({:in => [:a, :b], :scope => true})
     end
   end
 
