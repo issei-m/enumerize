@@ -669,6 +669,7 @@ class ActiveRecordTest < MiniTest::Spec
     expect(User.exists?(newsletter_subscribed: false)).must_equal true
   end
 
+
   if Rails::VERSION::MAJOR >= 6
     it 'supports AR#insert_all' do
       User.delete_all
